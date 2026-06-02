@@ -1,54 +1,108 @@
-// 1. Typewriter Effect
 const typewriterElement = document.getElementById("typewriter");
-const words = ["Web Developer", "AI Enthusiast", "Problem Solver"];
-let wordIndex = 0;
+const roles = [
+  "Artificial Intelligence & Machine Learning Undergraduate",
+  "Text-to-SQL Systems Builder",
+  "Voice AI Application Developer",
+  "NLP and Generative AI Enthusiast",
+];
+
+let roleIndex = 0;
 let charIndex = 0;
-let isDeleting = false;
+let deleting = false;
 
-function type() {
-  const currentWord = words[wordIndex];
-  const currentText = currentWord.substring(0, charIndex);
-  typewriterElement.textContent = currentText;
+function typeRole() {
+  if (!typewriterElement) return;
 
-  if (!isDeleting && charIndex < currentWord.length) {
-    charIndex++;
-    setTimeout(type, 100);
-  } else if (isDeleting && charIndex > 0) {
-    charIndex--;
-    setTimeout(type, 50);
-  } else {
-    isDeleting = !isDeleting;
-    if (!isDeleting) wordIndex = (wordIndex + 1) % words.length;
-    setTimeout(type, 1000);
+  const current = roles[roleIndex];
+  typewriterElement.textContent = current.slice(0, charIndex);
+
+  if (!deleting && charIndex < current.length) {
+    charIndex += 1;
+    window.setTimeout(typeRole, 70);
+    return;
   }
-}
-type();
 
-// 2. Smooth Scrolling for nav links
-document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-  anchor.addEventListener("click", function (e) {
-    e.preventDefault();
-    const target = document.querySelector(this.getAttribute("href"));
-    if (target) {
-      target.scrollIntoView({ behavior: "smooth" });
-    }
+  if (deleting && charIndex > 0) {
+    charIndex -= 1;
+    window.setTimeout(typeRole, 35);
+    return;
+  }
+
+  deleting = !deleting;
+  if (!deleting) {
+    roleIndex = (roleIndex + 1) % roles.length;
+  }
+
+  window.setTimeout(typeRole, deleting ? 1100 : 260);
+}
+
+// Loading, navigation, scroll animation, and project filtering.
+window.addEventListener("load", () => {
+  document.body.classList.add("loaded");
+  typeRole();
+});
+
+const navToggle = document.querySelector(".nav-toggle");
+const navLinks = document.querySelector(".nav-links");
+
+navToggle?.addEventListener("click", () => {
+  const expanded = navToggle.getAttribute("aria-expanded") === "true";
+  navToggle.setAttribute("aria-expanded", String(!expanded));
+  navLinks?.classList.toggle("open");
+});
+
+document.querySelectorAll(".nav-links a").forEach((link) => {
+  link.addEventListener("click", () => {
+    navLinks?.classList.remove("open");
+    navToggle?.setAttribute("aria-expanded", "false");
   });
 });
 
-// 3. Scroll animation for skill icons (optional fade-in)
-const skillSection = document.getElementById('skills');
-const skillImgs = document.querySelectorAll('#skills img');
-
-window.addEventListener('scroll', () => {
-  const triggerBottom = window.innerHeight * 0.8;
-  const sectionTop = skillSection.getBoundingClientRect().top;
-
-  if (sectionTop < triggerBottom) {
-    skillImgs.forEach((img, index) => {
-      setTimeout(() => {
-        img.style.opacity = 1;
-        img.style.transform = 'translateY(0)';
-      }, index * 100);
+const revealObserver = new IntersectionObserver(
+  (entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add("visible");
+        revealObserver.unobserve(entry.target);
+      }
     });
-  }
+  },
+  { threshold: 0.16 }
+);
+
+document.querySelectorAll(".reveal").forEach((element) => {
+  revealObserver.observe(element);
+});
+
+const sections = document.querySelectorAll("main section[id]");
+const navItems = document.querySelectorAll(".nav-links a");
+
+const activeObserver = new IntersectionObserver(
+  (entries) => {
+    entries.forEach((entry) => {
+      if (!entry.isIntersecting) return;
+      navItems.forEach((item) => {
+        item.classList.toggle("active", item.getAttribute("href") === `#${entry.target.id}`);
+      });
+    });
+  },
+  { rootMargin: "-45% 0px -50% 0px" }
+);
+
+sections.forEach((section) => activeObserver.observe(section));
+
+const filterButtons = document.querySelectorAll(".filter-btn");
+const projectCards = document.querySelectorAll(".project-card");
+
+filterButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    const filter = button.dataset.filter;
+    filterButtons.forEach((item) => item.classList.remove("active"));
+    button.classList.add("active");
+
+    projectCards.forEach((card) => {
+      const categories = card.dataset.category || "";
+      card.classList.toggle("hidden", filter !== "all" && !categories.includes(filter));
+    });
+  });
 });
